@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GridPulse · Electricity Demand Forecasting on Zoho Catalyst QuickML</title>
+  
+  <!-- Fonts: Plus Jakarta Sans for clean typography, JetBrains Mono for telemetry numerals -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <!-- Ambient background grid and glow -->
+  <div class="ambient-grid" aria-hidden="true"></div>
+  <div class="ambient-glow" aria-hidden="true"></div>
+
+  <div class="app-container">
+    
+    <!-- 1. Header Section -->
+    <header class="header">
+      <div class="header-main">
+        <div class="brand-row">
+          <div class="brand-logo" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+          </div>
+          <h1 class="brand-title">GridPulse</h1>
+        </div>
+        <p class="brand-tagline">Electricity demand forecasting on Zoho Catalyst QuickML</p>
+      </div>
+
+      <div class="header-status">
+        <div class="status-badge" id="liveStatusBadge">
+          <span class="status-pulse" aria-hidden="true"></span>
+          <span class="status-text">Endpoint Verified · 24/24</span>
+        </div>
+        <span class="platform-chip">Catalyst QuickML Live</span>
+      </div>
+    </header>
+
+    <!-- 2. Metric Cards Row -->
+    <section class="metrics-grid" aria-label="Key Performance Metrics">
+      <!-- Card 1: Total Predictions Made -->
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-label">Total Predictions Made</span>
+          <span class="metric-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+            </svg>
+          </span>
+        </div>
+        <div class="metric-value font-mono" id="metricTotalPredictions">24</div>
+        <div class="metric-subtext">Sequential inference runs executed</div>
+      </div>
+
+      <!-- Card 2: Live-Verified Predictions -->
+      <div class="metric-card metric-card-accent">
+        <div class="metric-header">
+          <span class="metric-label">Live-Verified Predictions</span>
+          <span class="metric-icon accent" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="m9 12 2 2 4-4"/>
+            </svg>
+          </span>
+        </div>
+        <div class="metric-value font-mono accent-text" id="metricLiveVerified">24/24</div>
+        <div class="metric-subtext">Against the live QuickML endpoint (100% pass)</div>
+      </div>
+
+      <!-- Card 3: Model MAPE (lower is better) -->
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-label" id="metricModelAccuracyLabel">Model MAPE (lower is better)</span>
+          <span class="metric-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="m16 10-4 4-2-2"/>
+            </svg>
+          </span>
+        </div>
+        <div class="metric-value font-mono" id="metricModelAccuracy">20.88%</div>
+        <div class="metric-subtext">QuickML automated regression metric</div>
+      </div>
+
+      <!-- Card 4: Forecast Horizon -->
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-label">Forecast Horizon</span>
+          <span class="metric-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </span>
+        </div>
+        <div class="metric-value font-mono" id="metricForecastHorizon">24 Hours</div>
+        <div class="metric-subtext">Hourly sequential forecasting window</div>
+      </div>
+    </section>
+
+    <!-- 3. Main Chart Section -->
+    <section class="chart-section" aria-label="Demand Forecasting Chart">
+      <div class="chart-header">
+        <div class="chart-title-block">
+          <h2 class="section-title">Predicted Electricity Demand - 24 Hour Horizon</h2>
+          <p class="section-description">Live QuickML endpoint predictions, 24 sequential hours (kW)</p>
+        </div>
+        
+        <div class="chart-legend-custom">
+          <div class="legend-item" id="legendPredicted">
+            <span class="legend-line line-predicted"></span>
+            <span class="legend-text">QuickML Predicted</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-wrapper">
+        <canvas id="demandForecastChart"></canvas>
+      </div>
+    </section>
+
+    <!-- 4. How It Works Strip (4 Steps) -->
+    <section class="workflow-section" aria-label="System Workflow">
+      <div class="section-header-compact">
+        <span class="eyebrow-tag">Architecture</span>
+        <h2 class="section-title">How It Works</h2>
+      </div>
+
+      <div class="workflow-strip">
+        <!-- Step 1 -->
+        <div class="workflow-step">
+          <div class="step-num font-mono">01</div>
+          <div class="step-content">
+            <h3 class="step-title">Dataset</h3>
+            <p class="step-desc">Hourly grid telemetry with ambient temperature, humidity %, and solar irradiance (W/m²).</p>
+          </div>
+        </div>
+
+        <div class="workflow-divider" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="m9 18 6-6-6-6"/>
+          </svg>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="workflow-step">
+          <div class="step-num font-mono">02</div>
+          <div class="step-content">
+            <h3 class="step-title">QuickML Training</h3>
+            <p class="step-desc">Automated regression pipeline on Zoho Catalyst, published to an authenticated endpoint.</p>
+          </div>
+        </div>
+
+        <div class="workflow-divider" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="m9 18 6-6-6-6"/>
+          </svg>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="workflow-step">
+          <div class="step-num font-mono">03</div>
+          <div class="step-content">
+            <h3 class="step-title">predict.py (Live Endpoint)</h3>
+            <p class="step-desc">Strict judge-contract CLI executing live token-authenticated inferences with atomic file generation.</p>
+          </div>
+        </div>
+
+        <div class="workflow-divider" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="m9 18 6-6-6-6"/>
+          </svg>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="workflow-step">
+          <div class="step-num font-mono">04</div>
+          <div class="step-content">
+            <h3 class="step-title">This Dashboard</h3>
+            <p class="step-desc">Deterministic visualization of live predictions from the verified endpoint.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Honest Engineering Note -->
+    <footer class="engineering-footer">
+      <div class="disclosure-card">
+        <div class="disclosure-badge">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="16" x2="12" y2="12"/>
+            <line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+          <span>ENGINEERING DISCLOSURE</span>
+        </div>
+        <p class="disclosure-body" id="engineeringNoteBody">
+          Live endpoint verified 24/24 on Oct 26. Free tier caps live calls at 500/month; the full 1000-row run completes after the monthly reset. Model MAPE: 20.88% on held-out evaluation data.
+        </p>
+      </div>
+
+      <div class="footer-meta">
+        <span class="meta-item font-mono">GridPulse v1.2</span>
+        <span class="meta-separator">·</span>
+        <span class="meta-item">HackSphere 3.0</span>
+        <span class="meta-separator">·</span>
+        <span class="meta-item">Powered by Zoho Catalyst QuickML</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Data Script -->
+  <script src="data.js"></script>
+  <!-- Application Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
